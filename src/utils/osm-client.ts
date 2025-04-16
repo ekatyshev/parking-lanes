@@ -7,13 +7,13 @@ import { type ChangedIdMap, type ChangesStore, type JxonOsmWay } from './types/c
 
 let auth: OSMAuth.osmAuth | null = null
 
-function craeteOsmAuth(useDevServer: boolean) {
+function createOsmAuth(useDevServer: boolean) {
     return useDevServer ?
         // eslint-disable-next-line new-cap
         new osmAuth({
             url: osmDevUrl,
             apiUrl: osmDevUrl,
-            client_id: 'lX6vX5gKHEfLV9kybjRpy2L7BTqtwZ5c_G7sjKscVw0',
+            client_id: 'JwU8kaHdrUy6ZrcXbLQgQMDMN14PAlzzlXz04rfnTCw',
             access_token: localStorage.getItem('https://master.apis.dev.openstreetmap.orgoauth2_access_token') ?? undefined,
             redirect_uri: window.location.origin + window.location.pathname + 'land.html',
             scope: 'read_prefs write_api',
@@ -50,7 +50,7 @@ function osmXhr(options: OSMAuth.OSMAuthXHROptions): Promise<any> {
 }
 
 export function authenticate(useDevServer: boolean): Promise<any> {
-    auth ??= craeteOsmAuth(useDevServer)
+    auth ??= createOsmAuth(useDevServer)
     return new Promise((resolve, reject) => {
         if (auth === null)
             return
