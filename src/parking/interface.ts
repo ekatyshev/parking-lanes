@@ -29,14 +29,16 @@ import { type OurWindow } from '../utils/types/interfaces'
 import { type OsmWay } from '../utils/types/osm-data'
 import { type ParsedOsmData } from '../utils/types/osm-data-storage'
 import { type ParkingAreas, type ParkingLanes, type ParkingPoint } from '../utils/types/parking'
+import { type PlatformPoint } from '../utils/types/platform'
 import { addBingImagery } from './bing-imagery'
 import { getUrl } from './data-url'
 import { parseParkingArea, parseParkingRelation, updateAreaColorsByDate } from './parking-area'
-import { parseParkingPoint, updatePointColorsByDate, updatePointStylesByZoom } from './parking-point'
+import { parseParkingPoint, updatePointColorsByDate, updateParkingPointStylesByZoom } from './parking-point'
+import { parsePlatformPoint, updatePlatformPointStylesByZoom } from './platform-point'
 import { AuthState, useAppStateStore, type AppStateStore } from './state'
 
-const editorName = 'PLanes'
-const version = '0.9.0'
+const editorName = 'PT Route Editor'
+const version = '0.0.1'
 
 const useDevServer = false
 const viewMinZoom = 15
@@ -89,12 +91,11 @@ export function initMap() {
 
     new AppInfoControl({ position: 'bottomright' }).addTo(map)
     new LegendControl({ position: 'bottomleft' }).addTo(map)
-    Panel(async() => await downloadParkingLanes(map),
+    Panel(async() => await downloadOsmData(map),
         handleCutLaneClick,
         handleOsmChange,
         async() => await handleSaveClick(),
         closeLaneInfo)
-
     useAppStateStore.subscribe(handleDatetimeChange)
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     useAppStateStore.subscribe(handleEditorChange)
@@ -121,10 +122,10 @@ function handleDatetimeChange(state: AppStateStore, prevState: AppStateStore) {
 
 const lanes: ParkingLanes = {}
 const areas: ParkingAreas = {}
-const points: ParkingPoint = {}
+const points: ParkingPoint | PlatformPoint = {}
 const markers: Record<string, L.Marker<any>> = {}
 
-async function downloadParkingLanes(map: L.Map): Promise<void> {
+async function downloadOsmData(map: L.Map): Promise<void> {
     const setFetchButtonText = useAppStateStore.getState().setFetchButtonText
     setFetchButtonText('Fetching data...')
     const { editorMode, osmDataSource } = useAppStateStore.getState()
@@ -179,9 +180,20 @@ async function downloadParkingLanes(map: L.Map): Promise<void> {
             if (points[node.id])
                 continue
 
-            const newPoints = parseParkingPoint(node, map.getZoom(), editorMode)
-            if (newPoints !== undefined)
-                addNewPoint(newPoints, map)
+            const newParkingPoints = parseParkingPoint(node, map.getZoom(), editorMode)
+            if (newParkingPoints !== undefined)
+                addNewPoint(newParkingPoints, map)
+        }
+    }
+
+    for (const node of Object.values(newData.nodes)) {
+        if (node.tags?.highway === 'bus_stop' || node.tags?.public_transport === 'platform') {
+            if (points[node.id])
+                continue
+
+            const newPlatformPoints = parsePlatformPoint(node, map.getZoom(), editorMode)
+            if (newPlatformPoints !== undefined)
+                addNewPoint(newPlatformPoints, map)
         }
     }
 }
@@ -252,7 +264,7 @@ function handleAreaClick(e: Event | any) {
     L.DomEvent.stopPropagation(e)
 }
 
-function addNewPoint(newPoints: ParkingPoint, map: L.Map): void {
+function addNewPoint(newPoints: ParkingPoint | PlatformPoint, map: L.Map): void {
     const { datetime } = useAppStateStore.getState()
     updatePointColorsByDate(newPoints, datetime)
     Object.assign(points, newPoints)
@@ -285,14 +297,15 @@ function handleMapMoveEnd() {
     setLocationToCookie(center, zoom)
 
     updateLaneStylesByZoom(lanes, zoom)
-    updatePointStylesByZoom(points, zoom)
+    updateParkingPointStylesByZoom(points, zoom)
+    updatePlatformPointStylesByZoom(points, zoom)
 
     if (zoom < viewMinZoom)
         return
 
     // Eslint: This worked before, so lets keep it; adding await will create new TS issues.
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    downloadParkingLanes(map)
+    downloadOsmData(map)
 }
 
 // Editor

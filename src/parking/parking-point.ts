@@ -23,7 +23,7 @@ export function updatePointColorsByDate(points: ParkingPoint, datetime: Date): v
     }
 }
 
-export function updatePointStylesByZoom(points: ParkingPoint, zoom: number): void {
+export function updateParkingPointStylesByZoom(points: ParkingPoint, zoom: number): void {
     const radius = getRadius(zoom)
     for (const point in points)
         points[point].setStyle({ radius })

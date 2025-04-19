@@ -47,6 +47,8 @@ function getOverpassViewerQuery(bounds: L.LatLngBounds) {
             .a <;
             node[amenity=parking](${convertBoundsToOverpassBbox(bounds)});
             node[amenity=parking_entrance](${convertBoundsToOverpassBbox(bounds)});
+            node[highway=bus_stop](${convertBoundsToOverpassBbox(bounds)});
+            node[public_transport=platform](${convertBoundsToOverpassBbox(bounds)});
         );
         out meta;`
 }
