@@ -6,7 +6,7 @@ export const overpassVkUrl = 'https://maps.mail.ru/osm/tools/overpass/api/interp
 export const josmUrl = 'http://127.0.0.1:8111/import?url='
 
 export const osmProdUrl = 'https://www.openstreetmap.org'
-export const osmDevUrl = 'https://master.apis.dev.openstreetmap.org'
+export const osmDevUrl = 'https://api06.dev.openstreetmap.org'
 
 export function mapillaryUrl(center: LatLngLiteral) {
     return `https://www.mapillary.com/app/?lat=${center.lat}&lng=${center.lng}&z=17&focus=map&trafficSign=all`

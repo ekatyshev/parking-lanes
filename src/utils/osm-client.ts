@@ -13,8 +13,8 @@ function createOsmAuth(useDevServer: boolean) {
         new osmAuth({
             url: osmDevUrl,
             apiUrl: osmDevUrl,
-            client_id: '_13Ozqo5UN7jEsWyVMgh-HX_dvRBghrYHgykkPP2kpg',
-            access_token: localStorage.getItem('https://master.apis.dev.openstreetmap.orgoauth2_access_token') ?? undefined,
+            client_id: 'BrTgpG4-iB2IcBGLVVWR6Vm3X-a-Vo9K0n9WMjt1pyQ',
+            access_token: localStorage.getItem('https://api06.dev.openstreetmap.orgoauth2_access_token') ?? undefined,
             redirect_uri: window.location.origin + window.location.pathname + 'land.html',
             scope: 'read_prefs write_api',
             auto: true,
