@@ -20,10 +20,8 @@ import {
     updateLaneColorsByDate,
     updateLaneStylesByZoom,
 } from './parking-lane'
-import {
-    parsePlatformWay,
-    updateWayStylesByZoom,
-} from './platform-way'
+import { parsePlatformWay, updatePlatformWayStylesByZoom } from './platform-way'
+import { parseRouteRelation, updateRouteWayStylesByZoom } from './route-way'
 
 import { addChangedEntity, changesStore } from '../utils/changes-store'
 import { downloadBbox, osmData, resetLastBounds } from '../utils/data-client'
@@ -34,6 +32,7 @@ import { type OsmWay } from '../utils/types/osm-data'
 import { type ParsedOsmData } from '../utils/types/osm-data-storage'
 import { type ParkingAreas, type ParkingLanes, type ParkingPoint } from '../utils/types/parking'
 import { type PlatformAreas, type PlatformWays, type PlatformPoint } from '../utils/types/platform'
+import { type RouteWays } from '../utils/types/route'
 import { addBingImagery } from './bing-imagery'
 import { getUrl } from './data-url'
 import { parseParkingArea, parseParkingRelation, updateAreaColorsByDate } from './parking-area'
@@ -126,7 +125,8 @@ function handleDatetimeChange(state: AppStateStore, prevState: AppStateStore) {
 }
 
 const lanes: ParkingLanes = {}
-const ways: PlatformWays = {}
+const platformWays: PlatformWays = {}
+const routeWays: RouteWays = {}
 const areas: ParkingAreas | PlatformAreas = {}
 const points: ParkingPoint | PlatformPoint = {}
 const markers: Record<string, L.Marker<any>> = {}
@@ -161,9 +161,7 @@ async function downloadOsmData(map: L.Map): Promise<void> {
             if (newAreas !== undefined)
                 addNewAreas(newAreas, map)
         }
-    }
 
-    for (const relation of Object.values(newData.relations)) {
         if (relation.tags?.highway === 'bus_stop' || relation.tags?.public_transport === 'platform') {
             if (areas[relation.type + relation.id])
                 continue
@@ -171,6 +169,15 @@ async function downloadOsmData(map: L.Map): Promise<void> {
             const newAreas = parsePlatformRelation(relation, newData.nodeCoords, newData.ways, map.getZoom(), editorMode)
             if (newAreas !== undefined)
                 addNewAreas(newAreas, map)
+        }
+
+        if (relation.tags?.type === 'route' && relation.tags?.route === 'bus') {
+            if (routeWays[relation.type + relation.id])
+                continue
+
+            const newRouteWays = parseRouteRelation(relation, newData.nodeCoords, newData.ways, map.getZoom(), editorMode)
+            if (newRouteWays !== undefined)
+                addNewRouteWays(newRouteWays, map)
         }
     }
 
@@ -194,16 +201,16 @@ async function downloadOsmData(map: L.Map): Promise<void> {
 
     for (const way of Object.values(newData.ways)) {
         if (way.tags?.highway === 'bus_stop' || way.tags?.public_transport === 'platform') {
-            if (areas[way.type + way.id] || ways['empty' + way.id])
+            if (areas[way.type + way.id] || platformWays['empty' + way.id])
                 continue
+
+            const newPlatformWays = parsePlatformWay(way, newData.nodeCoords, map.getZoom(), editorMode)
+            if (newPlatformWays !== undefined)
+                addNewPlatformWays(newPlatformWays, map)
 
             const newAreas = parsePlatformArea(way, newData.nodeCoords, map.getZoom(), editorMode)
             if (newAreas !== undefined)
                 addNewAreas(newAreas, map)
-
-            const newWays = parsePlatformWay(way, newData.nodeCoords, map.getZoom(), editorMode)
-            if (newWays !== undefined)
-                addNewWays(newWays, map)
         }
     }
 
@@ -243,16 +250,29 @@ function addNewLanes(newLanes: ParkingLanes, map: L.Map): void {
     }
 }
 
-function addNewWays(newWays: PlatformWays, map: L.Map): void {
+function addNewPlatformWays(newPlatformWays: PlatformWays, map: L.Map): void {
     // const { datetime } = useAppStateStore.getState()
     // updateLaneColorsByDate(newLanes, datetime)
-    Object.assign(ways, newWays)
-    for (const newWay of Object.values<L.Polyline>(newWays)) {
-        newWay.on('click', handleLaneClick)
-        newWay.addTo(map)
+    Object.assign(platformWays, newPlatformWays)
+    for (const newPlatformWay of Object.values<L.Polyline>(newPlatformWays)) {
+        newPlatformWay.on('click', handleWayClick)
+        newPlatformWay.addTo(map)
         // L.path is added by plugin, types don't exist.
         // @ts-expect-error
-        L.path.touchHelper(newWay).addTo(map)
+        L.path.touchHelper(newPlatfromWay).addTo(map)
+    }
+}
+
+function addNewRouteWays(newRouteWays: RouteWays, map: L.Map): void {
+    // const { datetime } = useAppStateStore.getState()
+    // updateLaneColorsByDate(newLanes, datetime)
+    Object.assign(routeWays, newRouteWays)
+    for (const newRouteWay of Object.values<L.Polyline>(newRouteWays)) {
+        newRouteWay.on('click', handleWayClick)
+        newRouteWay.addTo(map)
+        // L.path is added by plugin, types don't exist.
+        // @ts-expect-error
+        L.path.touchHelper(newRouteWay).addTo(map)
     }
 }
 
@@ -269,6 +289,13 @@ function handleLaneClick(e: Event | any) {
     lanes.left = backligntPolylines.left.addTo(map)
     useAppStateStore.getState().setSelectedOsmObject(osm)
 
+    L.DomEvent.stopPropagation(e)
+}
+
+function handleWayClick(e: Event | any) {
+    removeBacklights()
+    const osm: OsmWay = e.target.options.osm
+    useAppStateStore.getState().setSelectedOsmObject(osm)
     L.DomEvent.stopPropagation(e)
 }
 
@@ -342,7 +369,8 @@ function handleMapMoveEnd() {
     setLocationToCookie(center, zoom)
 
     updateLaneStylesByZoom(lanes, zoom)
-    updateWayStylesByZoom(lanes, zoom)
+    updatePlatformWayStylesByZoom(platformWays, zoom)
+    updateRouteWayStylesByZoom(routeWays, zoom)
     updateParkingPointStylesByZoom(points, zoom)
     updatePlatformPointStylesByZoom(points, zoom)
 

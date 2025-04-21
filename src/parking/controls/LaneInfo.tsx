@@ -17,7 +17,15 @@ export function OsmObjectPanel(props: {
     if (!selectedOsmObject)
         return null
 
-    const isStreetParking = selectedOsmObject.tags.highway &&
+    const isStreetParking = (selectedOsmObject.tags.highway === 'motorway' ||
+        selectedOsmObject.tags.highway === 'trunk' ||
+        selectedOsmObject.tags.highway === 'primary' ||
+        selectedOsmObject.tags.highway === 'secondary' ||
+        selectedOsmObject.tags.highway === 'tertiary' ||
+        selectedOsmObject.tags.highway === 'unclassified' ||
+        selectedOsmObject.tags.highway === 'residential' ||
+        selectedOsmObject.tags.highway === 'service' ||
+        selectedOsmObject.tags.highway === 'living_street') &&
         selectedOsmObject.tags.amenity !== 'parking'
 
     return (

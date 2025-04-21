@@ -11,16 +11,18 @@ export function parsePlatformArea(
     nodes: Record<number, number[]>,
     zoom: number,
     editorMode: boolean): PlatformAreas | undefined {
-    const polylineNodes = way.nodes.map(x => nodes[x])
-    const polyline: L.LatLngLiteral[] = polylineNodes.map((node) => ({ lat: node[0], lng: node[1] }))
+    if (way.nodes[0] === way.nodes.at(-1)) {
+        const polylineNodes = way.nodes.map(x => nodes[x])
+        const polyline: L.LatLngLiteral[] = polylineNodes.map((node) => ({lat: node[0], lng: node[1]}))
 
-    const areas: PlatformAreas = {}
+        const areas: PlatformAreas = {}
 
-    // const conditions = getConditions(way.tags)
-    const leafletPolygon = createPolygon(polyline, way, zoom)
-    areas[way.type + way.id] = leafletPolygon
+        // const conditions = getConditions(way.tags)
+        const leafletPolygon = createPolygon(polyline, way, zoom)
+        areas[way.type + way.id] = leafletPolygon
 
-    return areas
+        return areas
+    }
 }
 
 export function parsePlatformRelation(
@@ -92,7 +94,7 @@ export function parsePlatformRelation(
 
 function createPolygon(line: L.LatLngLiteral[] | L.LatLngLiteral[][], osm: OsmWay | OsmRelation, zoom: number) {
     const polylineOptions: ParkingPolylineOptions = {
-        // color: getColor(conditions?.default),
+        color: 'red',
         fillOpacity: 1,
         weight: 0,
         // conditions,

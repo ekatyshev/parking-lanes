@@ -22,6 +22,10 @@ export interface PlatformPolylineOptions extends PolylineOptions {
     // isMajor: boolean
 }
 
+export interface RoutePolylineOptions extends PolylineOptions {
+    osm: OsmWay
+}
+
 export interface PlatformPointOptions extends CircleMarkerOptions {
     osm: OsmNode
 }
