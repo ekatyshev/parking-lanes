@@ -10,16 +10,17 @@ export function parseRouteRelation(
     ways: Record<number, OsmWay>,
     zoom: number,
     editorMode: boolean): RouteWays | undefined {
-    let relationHasWay = false;
+    let relationHasWay = false
     const newWays: RouteWays = {}
 
     for (const member of relation.members) {
         if (member.type === 'way') {
-            relationHasWay = true;
+            relationHasWay = true
             const way = ways[member.ref]
-            if (way.tags?.highway && way.tags?.highway !== 'bus_stop') {
+            console.log(way)
+            if (way?.tags?.highway && way?.tags?.highway !== 'bus_stop') {
                 const polylineNodes = way.nodes.map(x => nodes[x])
-                const polyline: L.LatLngLiteral[] = polylineNodes.map((node) => ({lat: node[0], lng: node[1]}))
+                const polyline: L.LatLngLiteral[] = polylineNodes.map((node) => ({ lat: node[0], lng: node[1] }))
 
                 const leafletPolyline = createPolyline(polyline, way, zoom)
                 newWays[way.type + way.id] = leafletPolyline

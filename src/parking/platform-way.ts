@@ -9,10 +9,9 @@ export function parsePlatformWay(
     nodes: Record<number, number[]>,
     zoom: number,
     editorMode: boolean): PlatformWays | undefined {
-
     if (way.nodes[0] !== way.nodes.at(-1)) {
         const polylineNodes = way.nodes.map(x => nodes[x])
-        const polyline: L.LatLngLiteral[] = polylineNodes.map((node) => ({lat: node[0], lng: node[1]}))
+        const polyline: L.LatLngLiteral[] = polylineNodes.map((node) => ({ lat: node[0], lng: node[1] }))
 
         const ways: PlatformWays = {}
 
